@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICF-SL · Malaria Surveillance DQA</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f4f8;font-family:'Oswald',Arial,sans-serif;color:#000;font-weight:500;padding:20px;}
+.page-container{width:100%;max-width:1500px;margin:0 auto;}
+
+/* HEADER */
+.page-header{background:linear-gradient(135deg,#003060 0%,#004080 60%,#0056a8 100%);color:#fff;padding:28px 30px;text-align:center;border-radius:12px 12px 0 0;border-bottom:4px solid #ffc107;}
+.logo-row{display:flex;justify-content:center;margin-bottom:14px;}
+.logo-box{background:#fff;border-radius:8px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.logo-box img{width:88px;height:auto;border-radius:6px;}
+.page-header h3{font-size:13px;font-weight:700;letter-spacing:1.5px;color:#ffc107;text-transform:uppercase;margin:8px 0 3px;}
+.page-header .tagline{font-size:11px;color:#cde;font-style:italic;font-weight:400;}
+.page-header h1{margin:14px 0 8px;font-size:26px;font-weight:700;letter-spacing:2px;}
+.page-header .subtitle{font-size:13px;color:#cde;font-weight:400;}
+
+/* MAIN CARD */
+.main-card{border:4px double #004080;border-top:none;border-radius:0 0 12px 12px;background:#fff;box-shadow:0 6px 20px rgba(0,64,128,0.12);margin-bottom:20px;}
+.content-inner{padding:28px;}
+
+/* UPLOAD */
+.upload-zone{background:linear-gradient(135deg,#e7f3ff,#f0f8ff);padding:2.5rem;border-radius:10px;border:2.5px dashed #004080;text-align:center;margin:1.5rem 0;transition:all .3s;cursor:pointer;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#0056b3;background:linear-gradient(135deg,#dceeff,#eef6ff);}
+.upload-zone h3{color:#004080;font-size:20px;font-weight:700;letter-spacing:1px;margin-bottom:8px;}
+.upload-zone p{color:#555;font-size:13px;}
+.file-btn{position:relative;display:inline-block;cursor:pointer;background:#004080;color:#fff;padding:13px 28px;border-radius:6px;border:2px solid #004080;font-size:14px;font-weight:700;transition:all .3s;text-transform:uppercase;letter-spacing:1px;font-family:'Oswald',Arial,sans-serif;margin-top:1.2rem;}
+.file-btn:hover{background:#0056b3;border-color:#0056b3;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,64,128,.3);}
+.file-btn input[type="file"]{position:absolute;left:-9999px;}
+
+/* SECTION HEADER */
+.sec-hdr{background:linear-gradient(90deg,#004080,#0056b3);color:#fff;padding:13px 20px;margin:20px 0 16px;border-radius:8px;display:flex;align-items:center;gap:12px;border-left:5px solid #ffc107;}
+.sec-icon{background:#ffc107;color:#003060;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.sec-title{font-size:15px;font-weight:700;letter-spacing:1px;}
+
+/* STATS BAR */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.8rem;margin:1rem 0;}
+.stat-card{background:#f8f9fa;padding:.9rem;border-radius:8px;text-align:center;border:2px solid #004080;transition:all .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,64,128,.2);}
+.stat-card .sv{font-size:1.5rem;font-weight:700;color:#004080;line-height:1;}
+.stat-card .sl{font-size:10px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
+.sv-green{color:#28a745!important;}
+.sv-red{color:#dc3545!important;}
+.sv-amber{color:#b8700a!important;}
+
+/* BREADCRUMB */
+.breadcrumb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:#e7f3ff;border:2px solid #004080;border-radius:8px;margin-bottom:20px;}
+.bc-item{color:#004080;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:13px;font-weight:700;transition:background .2s;text-transform:uppercase;letter-spacing:.5px;}
+.bc-item:hover{background:rgba(0,64,128,.1);}
+.bc-item.active{background:#004080;color:#fff;}
+.bc-sep{color:#004080;font-weight:700;}
+
+/* NAVIGATION CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-bottom:24px;}
+.nav-card{background:#fff;border:2px solid #dee2e6;border-radius:10px;padding:22px;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;}
+.nav-card:hover{border-color:#004080;box-shadow:0 6px 20px rgba(0,64,128,.15);transform:translateY(-3px);}
+.nav-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.nav-card.level-region::before{background:linear-gradient(90deg,#003060,#004080,#0056b3);}
+.nav-card.level-district::before{background:linear-gradient(90deg,#004080,#0072ce);}
+.nav-card.level-chiefdom::before{background:linear-gradient(90deg,#0056b3,#0072ce);}
+.nav-card.level-facility::before{background:linear-gradient(90deg,#004080,#ffc107);}
+
+.nav-card-title{font-size:16px;font-weight:700;color:#003060;margin-bottom:4px;line-height:1.3;}
+.nav-card-sub{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.nav-card-counts{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.count-badge{text-align:center;flex:1;min-width:60px;}
+.count-badge .cv{display:block;font-size:17px;font-weight:700;color:#004080;line-height:1;}
+.count-badge .cl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.nav-card-hint{font-size:11px;color:#888;font-style:italic;text-align:center;border-top:1px solid #f0f0f0;padding-top:10px;margin-top:6px;}
+
+/* ISSUE BADGE ON CARD */
+.issue-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;margin-top:4px;}
+.ib-error{background:#f8d7da;color:#721c24;border:1px solid #dc3545;}
+.ib-none{background:#d4edda;color:#155724;border:1px solid #28a745;}
+
+/* HF TYPE PILLS */
+.pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:700;white-space:nowrap;}
+.pill-hospital{background:#003060;color:#fff;}
+.pill-clinic{background:#0056b3;color:#fff;}
+.pill-chc{background:#ffc107;color:#003060;}
+.pill-chp{background:#004080;color:#fff;}
+.pill-mchp{background:#e7f3ff;color:#003060;border:1px solid #004080;}
+.pill-other{background:#e9ecef;color:#555;}
+.pill-error{background:#f8d7da;color:#721c24;}
+.pill-ok{background:#d4edda;color:#155724;}
+.pill-high{background:#f8d7da;color:#721c24;}
+.pill-low{background:#fff3cd;color:#7d5a00;}
+.pill-na{background:#e9ecef;color:#555;}
+
+/* BACK BUTTON */
+.back-btn{background:#fff;color:#004080;border:2px solid #004080;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-family:'Oswald',Arial,sans-serif;margin-bottom:16px;transition:all .2s;}
+.back-btn:hover{background:#004080;color:#fff;}
+
+/* FACILITY DASHBOARD */
+.fac-header{background:linear-gradient(135deg,#003060,#004080);color:#fff;border-radius:10px;padding:20px 24px;margin-bottom:20px;border-bottom:3px solid #ffc107;}
+.fac-name{font-size:22px;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
+.fac-meta{font-size:12px;color:#cde;display:flex;gap:20px;flex-wrap:wrap;}
+
+/* DQA TABS */
+.tab-bar{display:flex;gap:3px;border-bottom:2px solid #004080;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{padding:8px 16px;border:2px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'Oswald',sans-serif;background:#e7f3ff;color:#004080;transition:all .2s;margin-bottom:-2px;letter-spacing:.5px;}
+.tab-btn.active{background:#004080;color:#fff;border-color:#004080;}
+.tab-btn.tab-warn{border-color:#b8700a;color:#b8700a;background:#fffbe6;}
+.tab-btn.tab-warn.active{background:#b8700a;color:#fff;border-color:#b8700a;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* MONTH CARDS GRID */
+.month-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px;}
+.month-card{background:#f8f9fa;border:2px solid #004080;border-radius:10px;overflow:hidden;}
+.month-card-header{background:#004080;color:#fff;padding:10px 16px;font-size:14px;font-weight:700;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;}
+.month-card-body{padding:0;}
+
+/* INDICATOR TABLE INSIDE MONTH CARD */
+.ind-table{width:100%;border-collapse:collapse;font-size:12px;}
+.ind-table th{background:#e7f3ff;color:#003060;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;}
+.ind-table th:first-child{text-align:left;}
+.ind-table td{padding:7px 10px;border-bottom:1px solid #e8f0f8;text-align:right;font-weight:700;}
+.ind-table td:first-child{text-align:left;color:#004080;font-weight:700;}
+.ind-table tr:last-child td{border-bottom:none;}
+.ind-table tr.row-high td{background:#fff0f0;}
+.ind-table tr.row-low td{background:#fffbe6;}
+.ind-table tr:hover td{background:#e7f3ff;}
+.val-col{color:#003060;font-size:14px;}
+.lb-col{color:#0056b3;}
+.ub-col{color:#b8700a;}
+
+/* ISSUES TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:2px solid #004080;margin:1rem 0;}
+.dqa-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px;}
+.dqa-table th{background:#004080;color:#fff;padding:9px 11px;font-size:11px;letter-spacing:.5px;text-align:left;font-weight:700;white-space:nowrap;}
+.dqa-table td{padding:8px 11px;border-bottom:1px solid #e0e8f0;}
+.dqa-table tr:nth-child(even){background:#f4f8fc;}
+.dqa-table tr:hover{background:#e7f3ff;}
+
+/* REPORTING MATRIX */
+.matrix-wrap{overflow:auto;max-height:460px;border:2px solid #004080;border-radius:8px;margin:1rem 0;}
+.matrix-table{border-collapse:collapse;font-size:11px;width:100%;}
+.matrix-table th{background:#004080;color:#fff;padding:7px 10px;white-space:nowrap;position:sticky;top:0;font-size:11px;font-weight:700;z-index:2;text-align:center;}
+.matrix-table th.var-col{text-align:left;min-width:150px;}
+.matrix-table td{padding:6px 10px;border:1px solid #e0e8f0;text-align:center;font-weight:700;}
+.matrix-table td.var-col{text-align:left;background:#f8f9fa;color:#004080;border-right:2px solid #004080;font-size:12px;}
+.cell-yes{background:#d4f5de;color:#155724;font-size:13px;}
+.cell-zero{background:#fff9db;color:#8a6d00;font-size:13px;}
+.cell-na{background:#f4f4f4;color:#bbb;font-size:11px;}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end;padding:1rem;background:#f8f9fa;border-radius:8px;border:1.5px solid #dee2e6;margin-bottom:1rem;}
+.filter-row label{font-size:11px;font-weight:700;color:#004080;text-transform:uppercase;display:block;margin-bottom:3px;}
+.form-control{padding:.5rem .8rem;border:2px solid #004080;border-radius:6px;font-size:12px;background:#fff;color:#000;font-family:'Oswald',Arial,sans-serif;font-weight:500;min-width:130px;}
+.form-control:focus{outline:none;border-color:#0056b3;}
+
+/* BTNS */
+.btn{padding:9px 18px;border:2px solid #004080;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;font-family:'Oswald',Arial,sans-serif;transition:all .2s;margin:3px;}
+.btn-primary{background:#004080;color:#fff;}
+.btn-primary:hover{background:#0056b3;border-color:#0056b3;}
+.btn-secondary{background:#fff;color:#004080;}
+.btn-secondary:hover{background:#f0f6ff;}
+.btn-success{background:#28a745;color:#fff;border-color:#28a745;}
+.btn-success:hover{background:#218838;}
+.btn-sm{padding:5px 11px;font-size:11px;}
+
+/* ALERTS */
+.alert{padding:.8rem 1.1rem;border-radius:6px;margin:.75rem 0;font-size:13px;font-weight:500;}
+.alert-info{background:#e7f3ff;border:2px solid #004080;color:#003060;}
+.alert-success{background:#d4edda;border:2px solid #28a745;color:#155724;}
+.alert-error{background:#f8d7da;border:2px solid #dc3545;color:#721c24;}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,32,64,.8);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;}
+.spinner{border:5px solid rgba(255,255,255,.2);border-top:5px solid #ffc107;border-radius:50%;width:52px;height:52px;animation:spin .9s linear infinite;}
+.loading-text{color:#fff;font-size:14px;font-weight:700;letter-spacing:1px;text-align:center;max-width:320px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* DL GRID */
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1rem 0;}
+.dl-card{background:#f8f9fa;border:2px solid #004080;border-radius:8px;padding:1.1rem;display:flex;flex-direction:column;gap:.6rem;}
+.dl-card strong{font-size:13px;color:#004080;display:block;}
+.dl-card span{font-size:11px;color:#555;line-height:1.5;}
+
+/* FOOTER */
+.page-footer{background:linear-gradient(135deg,#003060,#004080);color:#fff;padding:18px 30px;text-align:center;font-size:12px;line-height:1.7;border-radius:0 0 12px 12px;}
+.footer-top{font-weight:700;font-size:13px;color:#ffc107;}
+
+/* MISC */
+.hidden{display:none!important;}
+.no-data{text-align:center;color:#888;font-style:italic;padding:32px;font-size:13px;}
+.tbl-info{font-size:11px;color:#666;margin:6px 0 0;text-align:right;}
+::-webkit-scrollbar{width:7px;height:7px;}
+::-webkit-scrollbar-thumb{background:#004080;border-radius:4px;}
+@media(max-width:768px){body{padding:8px;}.content-inner{padding:14px;}.page-header h1{font-size:20px;}.cards-grid{grid-template-columns:1fr;}.month-cards-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="page-container">
+
+<!-- HEADER -->
+<div class="page-header">
+    <div class="logo-row">
+        <div class="logo-box">
+            <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL">
+        </div>
+    </div>
+    <h3>Informatics Consultancy Firm – Sierra Leone (ICF-SL)</h3>
+    <p class="tagline">Driving Data-Driven Solutions for Health and Development</p>
+    <h1>MALARIA SURVEILLANCE DQA</h1>
+    <p class="subtitle">Health Facility Database · Coherency · Reporting Status · Wrong Reporting · IQR Outlier Detection · Incomplete Reporting</p>
+</div>
+
+<div class="main-card">
+<div class="content-inner">
+
+<!-- LOADING -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingMsg">Processing data...</div>
+</div>
+
+<div id="alertBox"></div>
+
+<!-- UPLOAD -->
+<div id="uploadSection">
+    <div class="alert alert-info">
+        Upload your Sierra Leone DHIS2 malaria dataset (<strong>Excel .xlsx/.xls</strong> or <strong>CSV</strong>). After upload you will map each column to its variable — no renaming required.
+    </div>
+    <div class="upload-zone" id="dropZone">
+        <div style="margin-bottom:10px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#004080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><h3>STEP 1 — UPLOAD YOUR DATA FILE</h3>
+        <p>Excel (.xlsx / .xls) or CSV · Any column names — you will map them in Step 2</p>
+        <p style="font-size:12px;color:#888;margin-top:4px;">Drag and drop here, or click to browse</p>
+        <label class="file-btn">
+            Choose File
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+        </label>
+    </div>
+</div>
+
+<!-- STEP 2: COLUMN MAPPING -->
+<div id="mappingSection" class="hidden">
+    <div class="sec-hdr">
+        <span class="sec-icon">2</span>
+        <span class="sec-title">STEP 2 — MAP YOUR COLUMNS TO VARIABLES</span>
+    </div>
+    <div class="alert alert-info" id="mappingFileInfo"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem;margin-bottom:1.5rem;">
+
+        <!-- LOCATION -->
+        <div style="background:#fff;border:2px solid #004080;border-radius:10px;overflow:hidden;">
+            <div style="background:#004080;color:#fff;padding:10px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> LOCATION COLUMNS</div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">District <span style="color:#dc3545;">*</span></label>
+                    <select id="map_district" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Column containing district name (e.g. Bo District)</div>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Chiefdom</label>
+                    <select id="map_chiefdom" class="form-control" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Health Facility Name <span style="color:#dc3545;">*</span></label>
+                    <select id="map_facility" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Must include type in name (HOSPITAL, CLINIC, CHC, CHP, MCHP)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIME -->
+        <div style="background:#fff;border:2px solid #004080;border-radius:10px;overflow:hidden;">
+            <div style="background:#004080;color:#fff;padding:10px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> TIME COLUMNS</div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Year <span style="color:#dc3545;">*</span></label>
+                    <select id="map_year" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Column with 4-digit year (e.g. 2024)</div>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Month <span style="color:#dc3545;">*</span></label>
+                    <select id="map_month" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Number (1–12), name (January) or abbreviation (Jan)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INDICATORS -->
+        <div style="background:#fff;border:2px solid #004080;border-radius:10px;overflow:hidden;">
+            <div style="background:#003060;color:#ffc107;padding:10px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> INDICATOR COLUMNS (Totals — no age breakdown needed)</div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">OPD Total <span style="color:#dc3545;">*</span></label>
+                    <select id="map_opd" class="form-control" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Suspected Malaria Total <span style="color:#dc3545;">*</span></label>
+                    <select id="map_susp" class="form-control" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Microscopy Total <span style="color:#b8700a;font-size:10px;">(Hospital / Clinic)</span> <span style="color:#dc3545;">*</span></label>
+                    <select id="map_micro" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Positive + Negative combined, or a pre-summed total column</div>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Total Tested <span style="color:#dc3545;">*</span></label>
+                    <select id="map_tested" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Pre-calculated total tested (Microscopy + RDT combined, computed outside)</div>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Confirmed Cases Total <span style="color:#dc3545;">*</span></label>
+                    <select id="map_conf" class="form-control" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Treated with ACT Total <span style="color:#dc3545;">*</span></label>
+                    <select id="map_treated" class="form-control" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#004080;display:block;margin-bottom:3px;text-transform:uppercase;">Malaria Admissions <span style="color:#b8700a;font-size:10px;">(Hospital / Clinic)</span> <span style="color:#dc3545;">*</span></label>
+                    <select id="map_admission" class="form-control" style="width:100%;"></select>
+                    <div style="font-size:10px;color:#888;margin-top:2px;">Hospital &amp; Clinic must report at least one admission when active</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;">
+        <button class="btn btn-primary" onclick="runDQA()" style="font-size:14px;padding:12px 32px;display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> Run DQA Analysis</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetApp()" style="display:flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></svg> Back / Upload New File</button>
+        <span style="font-size:11px;color:#888;font-style:italic;">Fields marked <span style="color:#dc3545;">*</span> are required</span>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appSection" class="hidden">
+
+    <!-- TOP BAR -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
+        <span id="fileNameBadge" style="font-size:12px;color:#555;font-weight:700;"></span>
+        <div>
+            <button class="btn btn-success btn-sm" onclick="switchView('downloads')" style="display:inline-flex;align-items:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Results</button>
+            <button class="btn btn-secondary btn-sm" onclick="resetApp()">Upload New File</button>
+        </div>
+    </div>
+
+    <!-- SUMMARY STATS -->
+    <div class="sec-hdr">
+        <span class="sec-icon">S</span>
+        <span class="sec-title">OVERALL DQA SUMMARY</span>
+    </div>
+    <div class="stats-bar" id="summaryStats"></div>
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb" id="breadcrumb">
+        <span class="bc-item active" onclick="showProvinces()">All Provinces</span>
+    </div>
+
+    <!-- VIEWS -->
+    <div id="v-provinces"></div>
+    <div id="v-districts" class="hidden"></div>
+    <div id="v-chiefdoms" class="hidden"></div>
+    <div id="v-facilities" class="hidden"></div>
+    <div id="v-dashboard" class="hidden"></div>
+
+    <!-- DOWNLOADS VIEW -->
+    <div id="v-downloads" class="hidden">
+        <button class="back-btn" onclick="backFromDownloads()">Back to Facility Browser</button>
+        <div class="sec-hdr">
+            <span class="sec-icon">D</span>
+            <span class="sec-title">DOWNLOAD DQA RESULTS</span>
+        </div>
+        <div class="dl-grid" id="dlGrid"></div>
+    </div>
+
+</div><!-- /appSection -->
+
+</div><!-- /content-inner -->
+
+<div class="page-footer">
+    <div class="footer-top">Informatics Consultancy Firm – Sierra Leone (ICF-SL)</div>
+    <div>Malaria Surveillance Data Quality Assessment · National Malaria Control Programme</div>
+    <div style="color:#8ab;font-size:11px;margin-top:3px;">Coherency · Reporting Status · Wrong Reporting · IQR Outlier Detection · Incomplete Reporting</div>
+</div>
+</div><!-- /main-card -->
+</div><!-- /page-container -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   GLOBALS
+═══════════════════════════════════════════════ */
+let processedRows = [];
+let cohIssues     = [];
+let wrIssues      = [];
+let outIssues     = [];
+let incIssues     = [];
+let allPeriods    = [];
+let allDistricts  = [];
+let _rawRows      = [];
+let _fileName     = '';
+
+// Navigation state
+let curProvince = null, curDistrict = null, curChiefdom = null, curFacility = null;
+let prevView    = 'provinces';
+
+// Column mapping (set by mapping UI)
+let MAP = {};
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_ABBR  = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+const MONTHS_ORDER = MONTH_NAMES;
+const MONTH_MAP = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June',
+                   '07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'};
+
+let hierarchy = {};
+let facMeta   = {};
+
+/* ═══════════════════════════════════════════════
+   FILE HANDLING
+═══════════════════════════════════════════════ */
+document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    showLoading('Reading file...');
+    if (ext === 'csv') {
+        Papa.parse(file, { header:true, skipEmptyLines:true,
+            complete: r => { hideLoading(); showMappingUI(r.data, file.name); },
+            error:    e => { hideLoading(); showAlert('CSV error: '+e.message,'error'); }
+        });
+    } else if (['xlsx','xls'].includes(ext)) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const wb = XLSX.read(ev.target.result, {type:'array'});
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+                hideLoading(); showMappingUI(rows, file.name);
+            } catch(e) { hideLoading(); showAlert('Excel error: '+e.message,'error'); }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        hideLoading(); showAlert('Unsupported file type.','error');
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   COLUMN MAPPING UI
+═══════════════════════════════════════════════ */
+function showMappingUI(rows, fileName) {
+    if (!rows || !rows.length) { showAlert('File is empty or could not be read.','error'); return; }
+    _rawRows  = rows;
+    _fileName = fileName;
+    const headers = Object.keys(rows[0]);
+
+    // Auto-detect best guess for each field
+    function best(patterns, optional) {
+        for (const p of patterns) {
+            const found = headers.find(h => p.test(h));
+            if (found) return found;
+        }
+        return optional ? '__none__' : '';
+    }
+    const guesses = {
+        district:  best([/district/i, /level.?2/i, /admin.?2/i]),
+        chiefdom:  best([/chiefdom/i, /level.?4/i, /admin.?4/i], true),
+        facility:  best([/facilit/i, /level.?5/i, /hf.?name/i, /health.?unit/i]),
+        year:      best([/^year$/i, /^yr$/i, /year/i]),
+        month:     best([/^month$/i, /^mon$/i, /month/i]),
+        opd:       best([/opd.?total|total.?opd|^opd$/i, /opd/i]),
+        susp:      best([/suspect.*total|total.*suspect|^suspected$/i, /suspect/i]),
+        micro:     best([/microscopy.*total|total.*micro|^microscopy$/i, /micro/i]),
+        tested:    best([/^tested$|tested.*total|total.*tested|total.*test/i, /tested/i]),
+        conf:      best([/confirm.*total|total.*confirm|^confirmed$/i, /confirm/i]),
+        treated:   best([/treat.*total|total.*treat|act.*total|^treated$/i, /treated|act/i]),
+        admission: best([/admiss/i, /inpatient.*malaria|malaria.*admi/i], true)
+    };
+
+    // Build select options
+    const NONE_OPT = '<option value="__none__">— Not in data —</option>';
+    function buildOpts(sel, guessVal, optional) {
+        let html = optional ? NONE_OPT : '<option value="">— Select column —</option>';
+        headers.forEach(h => {
+            html += `<option value="${h.replace(/"/g,'&quot;')}"${h===guessVal?' selected':''}>${h}</option>`;
+        });
+        document.getElementById(sel).innerHTML = html;
+        if (guessVal && guessVal !== '__none__') document.getElementById(sel).value = guessVal;
+    }
+
+    buildOpts('map_district',  guesses.district,  false);
+    buildOpts('map_chiefdom',  guesses.chiefdom,  true);
+    buildOpts('map_facility',  guesses.facility,  false);
+    buildOpts('map_year',      guesses.year,      false);
+    buildOpts('map_month',     guesses.month,     false);
+    buildOpts('map_opd',       guesses.opd,       false);
+    buildOpts('map_susp',      guesses.susp,      false);
+    buildOpts('map_micro',     guesses.micro,     true);
+    buildOpts('map_tested',    guesses.tested,    false);
+    buildOpts('map_conf',      guesses.conf,      false);
+    buildOpts('map_treated',   guesses.treated,   false);
+    buildOpts('map_admission', guesses.admission, false);
+
+    document.getElementById('mappingFileInfo').innerHTML =
+        `<strong>${fileName}</strong> loaded — ${rows.length.toLocaleString()} rows, ${headers.length} columns detected. Confirm column mapping below, then click Run DQA.`;
+
+    document.getElementById('uploadSection').classList.add('hidden');
+    document.getElementById('mappingSection').classList.remove('hidden');
+}
+
+function runDQA() {
+    // Collect mapping
+    function v(id) { return document.getElementById(id).value; }
+    const required = ['map_district','map_facility','map_year','map_month','map_opd','map_susp','map_tested','map_conf','map_treated','map_admission'];
+    for (const id of required) {
+        if (!v(id) || v(id)==='__none__') {
+            showAlert('Please map all required (*) columns before running.','error'); return;
+        }
+    }
+    MAP = {
+        district:  v('map_district'),
+        chiefdom:  v('map_chiefdom') !== '__none__' ? v('map_chiefdom') : null,
+        facility:  v('map_facility'),
+        year:      v('map_year'),
+        month:     v('map_month'),
+        opd:       v('map_opd'),
+        susp:      v('map_susp'),
+        micro:     v('map_micro') !== '__none__' ? v('map_micro') : null,
+        tested:    v('map_tested'),
+        conf:      v('map_conf'),
+        treated:   v('map_treated'),
+        admission: v('map_admission')
+    };
+    document.getElementById('mappingSection').classList.add('hidden');
+    processData(_rawRows, _fileName);
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function nCol(row, col) {
+    if (!col) return 0;
+    const v = row[col];
+    if (v===''||v===undefined||v===null) return 0;
+    return parseInt(v)||0;
+}
+
+function normalizeMonth(val) {
+    if (!val && val!==0) return null;
+    const s = String(val).trim();
+    // Numeric
+    const n = parseInt(s);
+    if (!isNaN(n) && n>=1 && n<=12) return MONTH_NAMES[n-1];
+    // Full name match
+    const full = MONTH_NAMES.find(m => m.toLowerCase()===s.toLowerCase());
+    if (full) return full;
+    // Abbr match
+    const abbIdx = MONTH_ABBR.findIndex(a => a===s.toLowerCase().substring(0,3));
+    if (abbIdx>=0) return MONTH_NAMES[abbIdx];
+    return s; // fallback: use as-is
+}
+
+function getFacType(name) {
+    const u = (name||'').toUpperCase();
+    if (u.includes('HOSPITAL')||u.includes('HOSPTIAL')) return 'Hospital';
+    if (u.includes('MCHP'))   return 'MCHP';
+    if (u.includes('CHC'))    return 'CHC';
+    if (u.includes('CHP'))    return 'CHP';
+    if (u.includes('CLINIC')) return 'Clinic';
+    return 'Other';
+}
+
+const DISTRICT_TO_PROVINCE = {
+    'Bo District':'Southern Province','Bonthe District':'Southern Province','Moyamba District':'Southern Province','Pujehun District':'Southern Province',
+    'Bombali District':'Northern Province','Falaba District':'Northern Province','Koinadugu District':'Northern Province','Tonkolili District':'Northern Province',
+    'Kambia District':'North West Province','Karene District':'North West Province','Port Loko District':'North West Province',
+    'Kailahun District':'Eastern Province','Kenema District':'Eastern Province','Kono District':'Eastern Province',
+    'Western Area Urban District':'Western Area','Western Area Rural District':'Western Area'
+};
+
+/* ═══════════════════════════════════════════════
+   PROCESSING PIPELINE
+═══════════════════════════════════════════════ */
+function processData(rows, fileName) {
+    showLoading('Aggregating '+rows.length.toLocaleString()+' rows...');
+    setTimeout(() => {
+        aggregate(rows);
+        showLoading('Computing P5/P95 bounds...');
+        setTimeout(() => {
+            computeIQR();
+            showLoading('Running DQA checks...');
+            setTimeout(() => {
+                runChecks();
+                buildHierarchy();
+                showLoading('Rendering results...');
+                setTimeout(() => {
+                    document.getElementById('mappingSection').classList.add('hidden');
+                    document.getElementById('appSection').classList.remove('hidden');
+                    document.getElementById('fileNameBadge').textContent = fileName + '  |  ' + processedRows.length.toLocaleString() + ' records  |  ' + Object.keys(facMeta).length.toLocaleString() + ' facilities';
+                    renderSummaryStats();
+                    renderDownloads();
+                    showProvinces();
+                    hideLoading();
+                }, 50);
+            }, 50);
+        }, 50);
+    }, 50);
+}
+
+function aggregate(rows) {
+    processedRows = [];
+    facMeta = {};
+    rows.forEach(row => {
+        const fac  = (row[MAP.facility]||'').toString().trim();
+        const dist = (row[MAP.district]||'').toString().trim();
+        const chi  = MAP.chiefdom ? (row[MAP.chiefdom]||'').toString().trim() : '';
+        const year = (row[MAP.year]||'').toString().trim();
+        const mon  = normalizeMonth(row[MAP.month]);
+        if (!fac || !year || !mon) return;
+        // Build a sortable period key YYYYMM for ordering
+        const monIdx = MONTH_NAMES.indexOf(mon);
+        const monPad = monIdx>=0 ? String(monIdx+1).padStart(2,'0') : '00';
+        const period = year + monPad;
+        const prov   = DISTRICT_TO_PROVINCE[dist] || 'Unknown';
+        const type   = getFacType(fac);
+
+        const opd       = nCol(row, MAP.opd);
+        const susp      = nCol(row, MAP.susp);
+        const micro     = nCol(row, MAP.micro);
+        const tested    = nCol(row, MAP.tested);
+        const conf      = nCol(row, MAP.conf);
+        const treated   = nCol(row, MAP.treated);
+        const admission = parseInt(row[MAP.admission])||0;
+
+        processedRows.push({ province:prov, district:dist, chiefdom:chi, facility:fac, type,
+            year, month:mon, period, opd, susp, micro, tested, conf, treated, admission, bounds:{} });
+
+        if (!facMeta[fac]) facMeta[fac] = { district:dist, chiefdom:chi, province:prov, type };
+    });
+    allPeriods   = [...new Set(processedRows.map(r=>r.period))].sort();
+    allDistricts = [...new Set(processedRows.map(r=>r.district))].sort();
+}
+
+function computeIQR() {
+    const byFac = {};
+    const VARS = ['opd','susp','micro','tested','conf','treated'];
+    processedRows.forEach(r => {
+        if (!byFac[r.facility]) { byFac[r.facility]={}; VARS.forEach(k=>byFac[r.facility][k]=[]); }
+        VARS.forEach(k => byFac[r.facility][k].push(r[k]));
+    });
+    const fb = {};
+    // Percentile helper: linear interpolation
+    function pct(arr, p) {
+        if (!arr.length) return 0;
+        const idx = (arr.length - 1) * p;
+        const lo = Math.floor(idx), hi = Math.ceil(idx);
+        if (lo === hi) return arr[lo];
+        return arr[lo] + (arr[hi] - arr[lo]) * (idx - lo);
+    }
+    Object.keys(byFac).forEach(f => {
+        fb[f]={};
+        const VARS2 = ['opd','susp','micro','tested','conf','treated'];
+        VARS2.forEach(k => {
+            const v = byFac[f][k].filter(x=>x>0).sort((a,b)=>a-b);
+            if (v.length<4) { fb[f][k]={lb:null,ub:null}; return; }
+            // Q1 = 25th percentile, Q3 = 75th percentile (standard IQR)
+            const q1 = pct(v, 0.25), q3 = pct(v, 0.75), iq = q3 - q1;
+            fb[f][k]={lb:Math.max(0,Math.round(q1-1.5*iq)), ub:Math.round(q3+1.5*iq)};
+        });
+    });
+    processedRows.forEach(r => { r.bounds = fb[r.facility]||{}; });
+}
+
+function runChecks() {
+    cohIssues=[]; wrIssues=[]; outIssues=[]; incIssues=[];
+    const IQR_VARS = [
+        {k:'opd',l:'OPD'},{k:'susp',l:'Suspected'},{k:'micro',l:'Microscopy'},
+        {k:'tested',l:'Total Tested'},{k:'conf',l:'Confirmed'},{k:'treated',l:'Treated'}
+    ];
+
+    // Build lookup: facility -> Set of periods with data
+    const facPeriodSet = {};
+    processedRows.forEach(r => {
+        if (!facPeriodSet[r.facility]) facPeriodSet[r.facility] = new Set();
+        facPeriodSet[r.facility].add(r.period);
+    });
+
+    processedRows.forEach(r => {
+        const base = { province:r.province, district:r.district, chiefdom:r.chiefdom,
+                       facility:r.facility, type:r.type, year:r.year, month:r.month, period:r.period };
+        const isHC    = r.type==='Hospital'||r.type==='Clinic';
+        const isField = r.type==='CHC'||r.type==='CHP'||r.type==='MCHP';
+        const active  = r.opd>0||r.susp>0||r.tested>0||r.conf>0;
+
+        // ── COHERENCY ──────────────────────────────────
+        if (r.tested>0 && r.conf>r.tested)
+            cohIssues.push({...base, sev:'ERROR', check:'Confirmed > Tested',     v1:'Confirmed', v1val:r.conf,    v2:'Tested',     v2val:r.tested});
+        if (r.conf>0  && r.treated>r.conf)
+            cohIssues.push({...base, sev:'ERROR', check:'Treated > Confirmed',    v1:'Treated',   v1val:r.treated, v2:'Confirmed',  v2val:r.conf});
+        if (r.opd>0   && r.susp>r.opd)
+            cohIssues.push({...base, sev:'ERROR', check:'Suspected > OPD',        v1:'Suspected', v1val:r.susp,    v2:'OPD',        v2val:r.opd});
+        if (r.susp>0  && r.tested>r.susp)
+            cohIssues.push({...base, sev:'ERROR', check:'Tested > Suspected',     v1:'Tested',    v1val:r.tested,  v2:'Suspected',  v2val:r.susp});
+        if (r.susp>0  && r.conf>r.susp)
+            cohIssues.push({...base, sev:'ERROR', check:'Confirmed > Suspected',  v1:'Confirmed', v1val:r.conf,    v2:'Suspected',  v2val:r.susp});
+        if (r.tested>0 && r.micro>r.tested)
+            cohIssues.push({...base, sev:'ERROR', check:'Microscopy > Tested',    v1:'Microscopy',v1val:r.micro,   v2:'Tested',     v2val:r.tested});
+
+        // ── WRONG REPORTING ───────────────────────────
+        // Microscopy — bidirectional
+        if (isHC && active && r.micro===0)
+            wrIssues.push({...base, sev:'ERROR',
+                rule:'Hospital/Clinic — Microscopy missing',
+                detail:`Active Hospital/Clinic (OPD=${r.opd}, Suspected=${r.susp}) reported zero Microscopy. Hospitals and Clinics must use Microscopy.`});
+        if (isField && r.micro>0)
+            wrIssues.push({...base, sev:'ERROR',
+                rule:'Field facility — Microscopy reported (not expected)',
+                detail:`${r.type} reported ${r.micro} Microscopy tests. Field facilities (CHC/CHP/MCHP) should not report Microscopy.`});
+
+        // Admissions — bidirectional
+        if (isHC && active && r.admission===0)
+            wrIssues.push({...base, sev:'ERROR',
+                rule:'Hospital/Clinic — Malaria Admission missing',
+                detail:`Active Hospital/Clinic reported zero Malaria Admissions. Must report at least one when active (OPD=${r.opd}, Confirmed=${r.conf}).`});
+        if (isField && r.admission>0)
+            wrIssues.push({...base, sev:'WARNING',
+                rule:'Field facility — Malaria Admission reported (not expected)',
+                detail:`${r.type} reported ${r.admission} Malaria Admissions. Field facilities (CHC/CHP/MCHP) should not report Admissions.`});
+
+        // ── IQR OUTLIERS (value must be >0 to be checked; 0 = NA) ──
+        IQR_VARS.forEach(({k,l}) => {
+            const val = r[k];
+            if (val===0||val===null||val===undefined) return; // 0/NA → not an outlier
+            const b = r.bounds[k]||{lb:null,ub:null};
+            if (b.ub!==null && val>b.ub)
+                outIssues.push({...base, variable:l, value:val, lb:b.lb, ub:b.ub, status:'High'});
+            else if (b.lb!==null && val<b.lb)
+                outIssues.push({...base, variable:l, value:val, lb:b.lb, ub:b.ub, status:'Low'});
+        });
+    });
+
+    // ── INCOMPLETE REPORTING ───────────────────────
+    // Core variables every facility must report (any NA = 1 incomplete issue)
+    const CORE_VARS = [
+        {k:'opd',       l:'OPD'},
+        {k:'susp',      l:'Suspected'},
+        {k:'tested',    l:'Total Tested'},
+        {k:'conf',      l:'Confirmed'},
+        {k:'treated',   l:'Treated (ACT)'}
+    ];
+    // HC-only variables (Hospital / Clinic must report these; others must NOT)
+    const HC_VARS = [
+        {k:'micro',     l:'Microscopy'},
+        {k:'admission', l:'Malaria Admissions'}
+    ];
+
+    // Build a per-facility row lookup: facility -> period -> row
+    const facRowLookup = {};
+    processedRows.forEach(r => {
+        if (!facRowLookup[r.facility]) facRowLookup[r.facility] = {};
+        facRowLookup[r.facility][r.period] = r;
+    });
+
+    Object.keys(facMeta).forEach(fac => {
+        const meta   = facMeta[fac]||{};
+        const isHC_f = meta.type==='Hospital'||meta.type==='Clinic';
+        const base   = { province:meta.province||'Unknown', district:meta.district||'',
+                         chiefdom:meta.chiefdom||'', facility:fac, type:meta.type||'Other' };
+
+        allPeriods.forEach(period => {
+            const yr  = period.substring(0,4);
+            const mon = MONTH_MAP[period.substring(4,6)]||period;
+            const row = facRowLookup[fac] ? facRowLookup[fac][period] : null;
+
+            // If no row at all, every eligible variable is missing
+            const vars = [...CORE_VARS, ...(isHC_f ? HC_VARS : [])];
+            vars.forEach(({k, l}) => {
+                const val = row ? row[k] : null;
+                const isNA = (val===null || val===undefined || val===0 || val==='');
+                if (isNA) {
+                    incIssues.push({...base, year:yr, month:mon, period,
+                        sev:'WARNING', variable:l,
+                        issue:`${l} — Not Reported`,
+                        detail:`${l} is NA for ${mon} ${yr}. ${row ? 'Row exists but value is zero/blank.' : 'No report row found for this period.'}`});
+                }
+            });
+        });
+    });
+}
+
+function buildHierarchy() {
+    hierarchy = {};
+    processedRows.forEach(r => {
+        if (!hierarchy[r.province]) hierarchy[r.province]={};
+        if (!hierarchy[r.province][r.district]) hierarchy[r.province][r.district]={};
+        if (!hierarchy[r.province][r.district][r.chiefdom]) hierarchy[r.province][r.district][r.chiefdom]=new Set();
+        hierarchy[r.province][r.district][r.chiefdom].add(r.facility);
+    });
+    // Convert Sets to arrays
+    Object.keys(hierarchy).forEach(prov =>
+        Object.keys(hierarchy[prov]).forEach(dist =>
+            Object.keys(hierarchy[prov][dist]).forEach(chi => {
+                hierarchy[prov][dist][chi] = [...hierarchy[prov][dist][chi]].sort();
+            })
+        )
+    );
+}
+
+/* ═══════════════════════════════════════════════
+   ISSUE COUNTS (for card badges)
+═══════════════════════════════════════════════ */
+function issueCount(filterFn) {
+    return cohIssues.filter(filterFn).length + wrIssues.filter(filterFn).length + outIssues.filter(filterFn).length + incIssues.filter(filterFn).length;
+}
+function issueBadge(count) {
+    if (count===0) return `<span class="issue-badge ib-none">No Issues</span>`;
+    return `<span class="issue-badge ib-error">${count.toLocaleString()} Issue${count>1?'s':''}</span>`;
+}
+
+/* ═══════════════════════════════════════════════
+   SUMMARY STATS
+═══════════════════════════════════════════════ */
+function renderSummaryStats() {
+    const hfs      = Object.keys(facMeta).length;
+    const totalRec = processedRows.length;
+
+    // ── DQA Error Rate ─────────────────────────────────────────────────────
+    // Denominator = total eligible data points across all records.
+    // Each record contributes 5 core variables (OPD, Suspected, Tested, Confirmed, Treated).
+    // Hospital/Clinic records additionally contribute Microscopy + Admissions (2 more).
+    // The rate = total issues (all 4 categories) ÷ total eligible data points × 100.
+    // This measures what fraction of expected data values actually have a quality problem.
+    const totalCorePoints = processedRows.length * 5;
+    const totalHCPoints   = processedRows.filter(r=>r.type==='Hospital'||r.type==='Clinic').length * 2;
+    const totalPoints     = totalCorePoints + totalHCPoints;
+    const totalIssues     = cohIssues.length + wrIssues.length + outIssues.length + incIssues.length;
+    const errRate         = totalPoints>0 ? (totalIssues/totalPoints*100).toFixed(1) : '0.0';
+
+    // ── Avg errors per facility ────────────────────────────────────────────
+    const avgErrPerFac = hfs>0 ? (totalIssues/hfs).toFixed(1) : '0.0';
+
+    const formula = `DQA Error Rate = Total Issues (${totalIssues.toLocaleString()}) ÷ Total Eligible Data Points (${totalPoints.toLocaleString()}) × 100\n\nData points = each record × 5 core variables; Hospital/Clinic records × 2 extra (Microscopy, Admissions).\nIncludes: Coherency (${cohIssues.length}), Wrong Reporting (${wrIssues.length}), IQR Outliers (${outIssues.length}), Incomplete (${incIssues.length}).`;
+    const avgFormula = `Avg Errors per Facility = Total Issues (${totalIssues.toLocaleString()}) ÷ Facilities (${hfs.toLocaleString()})`;
+
+    document.getElementById('summaryStats').innerHTML = [
+        {sv:hfs.toLocaleString(),          sl:'Health Facilities',      cls:'',            tip:null},
+        {sv:allPeriods.length,             sl:'Reporting Periods',      cls:'',            tip:null},
+        {sv:totalRec.toLocaleString(),     sl:'HF × Period Records',    cls:'',            tip:null},
+        {sv:totalIssues.toLocaleString(),     sl:'Total Issues',          cls:totalIssues>0?'sv-red':'sv-green', tip:`Coherency (${cohIssues.length}) + Wrong Reporting (${wrIssues.length}) + IQR Outliers (${outIssues.length}) + Incomplete (${incIssues.length})`},
+        {sv:wrIssues.length.toLocaleString(),   sl:'Wrong Reporting',   cls:'sv-red',      tip:null},
+        {sv:outIssues.length.toLocaleString(),  sl:'IQR Outliers',      cls:'sv-amber',    tip:null},
+        {sv:incIssues.length.toLocaleString(),  sl:'Incomplete Reports',cls:incIssues.length>0?'sv-amber':'sv-green', tip:null},
+        {sv:avgErrPerFac,                  sl:'Avg Errors / Facility',  cls:parseFloat(avgErrPerFac)>5?'sv-red':'sv-amber', tip:avgFormula},
+        {sv:errRate+'%',                   sl:'DQA Error Rate',         cls:parseFloat(errRate)>10?'sv-red':'sv-green',     tip:formula}
+    ].map(s=>`<div class="stat-card" ${s.tip?`title="${s.tip.replace(/"/g,"'")}" style="cursor:help;"`:''}><div class="sv ${s.cls}">${s.sv}</div><div class="sl">${s.sl}</div>${s.tip?'<div style="font-size:9px;color:#888;margin-top:3px;">hover for formula</div>':''}</div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+const ALL_VIEWS = ['v-provinces','v-districts','v-chiefdoms','v-facilities','v-dashboard','v-downloads'];
+function hideAllViews() { ALL_VIEWS.forEach(id=>document.getElementById(id).classList.add('hidden')); }
+function showView(id)   { hideAllViews(); document.getElementById(id).classList.remove('hidden'); }
+
+function crumb() {
+    let h = `<span class="bc-item${!curProvince?' active':''}" onclick="showProvinces()">All Provinces</span>`;
+    if (curProvince)  h += `<span class="bc-sep">›</span><span class="bc-item${!curDistrict?' active':''}" onclick="showDistricts('${curProvince}')">${curProvince}</span>`;
+    if (curDistrict)  h += `<span class="bc-sep">›</span><span class="bc-item${!curChiefdom?' active':''}" onclick="showChiefdoms('${curDistrict}')">${curDistrict}</span>`;
+    if (curChiefdom)  h += `<span class="bc-sep">›</span><span class="bc-item${!curFacility?' active':''}" onclick="showFacilities('${curChiefdom}')">${curChiefdom}</span>`;
+    if (curFacility)  h += `<span class="bc-sep">›</span><span class="bc-item active">${curFacility}</span>`;
+    document.getElementById('breadcrumb').innerHTML = h;
+}
+
+/* ── PROVINCES ── */
+function showProvinces() {
+    curProvince=null; curDistrict=null; curChiefdom=null; curFacility=null;
+    showView('v-provinces'); crumb();
+    const container = document.getElementById('v-provinces');
+    const provs = Object.keys(hierarchy).sort();
+
+    let html = `<div class="sec-hdr"><span class="sec-icon">P</span><span class="sec-title">SELECT PROVINCE / AREA</span></div>`;
+    html += `<div class="cards-grid">`;
+    provs.forEach(prov => {
+        const dists = Object.keys(hierarchy[prov]);
+        let totChi=0, totFac=0;
+        dists.forEach(d => { const chis=Object.keys(hierarchy[prov][d]); totChi+=chis.length; chis.forEach(c=>totFac+=hierarchy[prov][d][c].length); });
+        const issues = issueCount(r=>r.province===prov);
+        html += `<div class="nav-card level-region" onclick="showDistricts('${esc(prov)}')">
+            <div class="nav-card-title">${prov}</div>
+            <div class="nav-card-sub">Province / Area</div>
+            <div class="nav-card-counts">
+                <div class="count-badge"><span class="cv">${dists.length}</span><span class="cl">Districts</span></div>
+                <div class="count-badge"><span class="cv">${totChi}</span><span class="cl">Chiefdoms</span></div>
+                <div class="count-badge"><span class="cv">${totFac}</span><span class="cl">Facilities</span></div>
+            </div>
+            ${issueBadge(issues)}
+            <div class="nav-card-hint">Click to view districts</div>
+        </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+/* ── DISTRICTS ── */
+function showDistricts(prov) {
+    curProvince=prov; curDistrict=null; curChiefdom=null; curFacility=null;
+    showView('v-districts'); crumb();
+    const container = document.getElementById('v-districts');
+    const dists = Object.keys(hierarchy[prov]).sort();
+
+    let html = `<button class="back-btn" onclick="showProvinces()">Back to Provinces</button>`;
+    html += `<div class="sec-hdr"><span class="sec-icon">D</span><span class="sec-title">DISTRICTS — ${prov}</span></div>`;
+    html += `<div class="cards-grid">`;
+    dists.forEach(dist => {
+        const chis = Object.keys(hierarchy[prov][dist]);
+        let totFac=0; chis.forEach(c=>totFac+=hierarchy[prov][dist][c].length);
+        const issues = issueCount(r=>r.district===dist);
+        html += `<div class="nav-card level-district" onclick="showChiefdoms('${esc(dist)}')">
+            <div class="nav-card-title">${dist}</div>
+            <div class="nav-card-sub">District</div>
+            <div class="nav-card-counts">
+                <div class="count-badge"><span class="cv">${chis.length}</span><span class="cl">Chiefdoms</span></div>
+                <div class="count-badge"><span class="cv">${totFac}</span><span class="cl">Facilities</span></div>
+            </div>
+            ${issueBadge(issues)}
+            <div class="nav-card-hint">Click to view chiefdoms</div>
+        </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+/* ── CHIEFDOMS ── */
+function showChiefdoms(dist) {
+    curDistrict=dist; curChiefdom=null; curFacility=null;
+    showView('v-chiefdoms'); crumb();
+    const container = document.getElementById('v-chiefdoms');
+    const prov = curProvince;
+    const chis = Object.keys(hierarchy[prov][dist]).sort();
+
+    let html = `<button class="back-btn" onclick="showDistricts('${esc(prov)}')">Back to Districts</button>`;
+    html += `<div class="sec-hdr"><span class="sec-icon">C</span><span class="sec-title">CHIEFDOMS — ${dist}</span></div>`;
+    html += `<div class="cards-grid">`;
+    chis.forEach(chi => {
+        const facs = hierarchy[prov][dist][chi];
+        const issues = issueCount(r=>r.chiefdom===chi);
+        html += `<div class="nav-card level-chiefdom" onclick="showFacilities('${esc(chi)}')">
+            <div class="nav-card-title">${chi}</div>
+            <div class="nav-card-sub">Chiefdom</div>
+            <div class="nav-card-counts">
+                <div class="count-badge"><span class="cv">${facs.length}</span><span class="cl">Facilities</span></div>
+            </div>
+            ${issueBadge(issues)}
+            <div class="nav-card-hint">Click to view health facilities</div>
+        </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+/* ── FACILITIES ── */
+function showFacilities(chi) {
+    curChiefdom=chi; curFacility=null;
+    showView('v-facilities'); crumb();
+    const container = document.getElementById('v-facilities');
+    const prov = curProvince, dist = curDistrict;
+    const facs = hierarchy[prov][dist][chi];
+
+    const pillMap = {Hospital:'pill-hospital',Clinic:'pill-clinic',CHC:'pill-chc',CHP:'pill-chp',MCHP:'pill-mchp',Other:'pill-other'};
+
+    let html = `<button class="back-btn" onclick="showChiefdoms('${esc(dist)}')">Back to Chiefdoms</button>`;
+    html += `<div class="sec-hdr"><span class="sec-icon">H</span><span class="sec-title">HEALTH FACILITIES — ${chi}</span></div>`;
+    html += `<div class="cards-grid">`;
+    facs.forEach(fac => {
+        const meta   = facMeta[fac] || {type:'Other'};
+        const pc     = pillMap[meta.type]||'pill-other';
+        const issues = issueCount(r=>r.facility===fac);
+        html += `<div class="nav-card level-facility" onclick="showDashboard('${esc(fac)}')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                <div class="nav-card-title" style="font-size:15px;">${fac}</div>
+                <span class="pill ${pc}">${meta.type}</span>
+            </div>
+            <div class="nav-card-sub">${chi} · ${dist}</div>
+            <div class="nav-card-counts">
+                <div class="count-badge">
+                    <span class="cv">${processedRows.filter(r=>r.facility===fac).length}</span>
+                    <span class="cl">Periods</span>
+                </div>
+            </div>
+            ${issueBadge(issues)}
+            <div class="nav-card-hint">Click to view DQA dashboard</div>
+        </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+/* ── FACILITY DASHBOARD ── */
+function showDashboard(fac) {
+    curFacility = fac;
+    showView('v-dashboard'); crumb();
+    const container  = document.getElementById('v-dashboard');
+    const meta       = facMeta[fac] || {type:'Other',district:'',chiefdom:'',province:''};
+    const pillMap    = {Hospital:'pill-hospital',Clinic:'pill-clinic',CHC:'pill-chc',CHP:'pill-chp',MCHP:'pill-mchp',Other:'pill-other'};
+    const pc         = pillMap[meta.type]||'pill-other';
+    const facRows    = processedRows.filter(r=>r.facility===fac);
+    const facCoh     = cohIssues.filter(r=>r.facility===fac);
+    const facWr      = wrIssues.filter(r=>r.facility===fac);
+    const facOut     = outIssues.filter(r=>r.facility===fac);
+    const facInc     = incIssues.filter(r=>r.facility===fac);
+    const totalIssues= facCoh.length+facWr.length+facOut.length+facInc.length;
+
+    let html = `<button class="back-btn" onclick="showFacilities('${esc(curChiefdom)}')">Back to Health Facilities</button>`;
+
+    // Facility header
+    html += `<div class="fac-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem;">
+            <div>
+                <div class="fac-name">${fac}</div>
+                <div class="fac-meta">
+                    <span><span class="pill ${pc}">${meta.type}</span></span>
+                    <span>${meta.chiefdom}</span>
+                    <span>${meta.district}</span>
+                    <span>${meta.province}</span>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:22px;font-weight:700;color:#ffc107;">${totalIssues}</div>
+                <div style="font-size:10px;color:#cde;text-transform:uppercase;">Total Issues</div>
+            </div>
+        </div>
+    </div>`;
+
+    // Mini stats
+    html += `<div class="stats-bar" style="margin-bottom:1.2rem;">
+        ${[
+            {sv:facRows.length, sl:'Periods Reported',    cls:''},
+            {sv:facCoh.length,  sl:'Coherency Errors',    cls:facCoh.length>0?'sv-red':'sv-green'},
+            {sv:facWr.length,   sl:'Wrong Reporting',     cls:facWr.length>0?'sv-red':'sv-green'},
+            {sv:facOut.length,  sl:'IQR Outliers',        cls:facOut.length>0?'sv-amber':'sv-green'},
+            {sv:facInc.length,  sl:'Incomplete Reports',  cls:facInc.length>0?'sv-amber':'sv-green'}
+        ].map(s=>`<div class="stat-card"><div class="sv ${s.cls}">${s.sv}</div><div class="sl">${s.sl}</div></div>`).join('')}
+    </div>`;
+
+    // Tabs
+    html += `<div class="tab-bar">
+        <button class="tab-btn active" onclick="dqaTab('reporting','${esc(fac)}',this)">Reporting Status</button>
+        <button class="tab-btn" onclick="dqaTab('monthly','${esc(fac)}',this)">Monthly Indicators</button>
+        <button class="tab-btn" onclick="dqaTab('coherency','${esc(fac)}',this)">Coherency (${facCoh.length})</button>
+        <button class="tab-btn" onclick="dqaTab('wrongrep','${esc(fac)}',this)">Wrong Reporting (${facWr.length})</button>
+        <button class="tab-btn" onclick="dqaTab('outliers','${esc(fac)}',this)">IQR Outliers (${facOut.length})</button>
+        <button class="tab-btn${facInc.length>0?' tab-warn':''}" onclick="dqaTab('incomplete','${esc(fac)}',this)">Incomplete Reports (${facInc.length})</button>
+    </div>`;
+
+    html += `<div id="dqa-panes">`;
+
+    // PANE: Reporting Status matrix
+    html += `<div id="pane-reporting">`;
+    const periods = allPeriods;
+    const VARS_REP = [
+        {k:'opd',    l:'OPD (Total)'},
+        {k:'susp',   l:'Suspected Malaria'},
+        {k:'micro',  l:'Microscopy (Hospital/Clinic)'},
+        {k:'tested', l:'Total Tested'},
+        {k:'conf',   l:'Confirmed'},
+        {k:'treated',l:'Treated (ACT)'},
+        {k:'admission',l:'Malaria Admissions (Hospital/Clinic)'}
+    ];
+    const lookup = {};
+    facRows.forEach(r => { lookup[r.period] = r; });
+    const facPeriods = new Set(facRows.map(r=>r.period));
+
+    html += `<div class="matrix-wrap"><table class="matrix-table"><thead><tr>
+        <th class="var-col">Variable</th>`;
+    periods.forEach(p => {
+        const yr=p.substring(0,4), mo=(MONTH_MAP[p.substring(4,6)]||p).substring(0,3);
+        html += `<th>${mo}<br><span style="font-weight:400;font-size:9px">${yr}</span></th>`;
+    });
+    html += `</tr></thead><tbody>`;
+    VARS_REP.forEach(({k,l}) => {
+        html += `<tr><td class="var-col">${l}</td>`;
+        periods.forEach(p => {
+            if (!facPeriods.has(p))    html += `<td class="cell-na">NA</td>`;
+            else if (lookup[p][k]>0)   html += `<td class="cell-yes">${lookup[p][k].toLocaleString()}</td>`;
+            else                       html += `<td class="cell-zero">NA</td>`;
+        });
+        html += `</tr>`;
+    });
+    html += `</tbody></table></div>
+    <div style="font-size:11px;color:#666;margin-top:4px;">
+        <strong style="color:#155724">Number</strong> = actual reported value &nbsp; 
+        <strong style="color:#8a6d00">NA</strong> = zero or no record for that period
+    </div>`;
+    html += `</div>`; // pane-reporting
+
+    // PANE: Monthly Indicators with IQR
+    html += `<div id="pane-monthly" class="hidden">`;
+    const sortedRows = [...facRows].sort((a,b)=> a.period.localeCompare(b.period));
+    const IND_DEFS = [
+        {k:'opd',    l:'OPD (Total)'},
+        {k:'susp',   l:'Suspected Malaria'},
+        {k:'micro',  l:'Microscopy (Hospital/Clinic)'},
+        {k:'tested', l:'Total Tested'},
+        {k:'conf',   l:'Confirmed'},
+        {k:'treated',l:'Treated (ACT)'}
+    ];
+
+    html += `<div class="month-cards-grid">`;
+    sortedRows.forEach(r => {
+        const mo = r.month + ' ' + r.year;
+        const hasIssue = facCoh.some(i=>i.period===r.period) || facWr.some(i=>i.period===r.period);
+        html += `<div class="month-card">
+            <div class="month-card-header">
+                <span>${mo}</span>
+                ${hasIssue ? '<span style="background:#ffc107;color:#003060;font-size:10px;padding:2px 8px;border-radius:10px;">Issues Found</span>' : '<span style="background:rgba(255,255,255,.15);font-size:10px;padding:2px 8px;border-radius:10px;">OK</span>'}
+            </div>
+            <table class="ind-table">
+                <thead><tr>
+                    <th>Variable</th>
+                    <th>Value</th>
+                    <th>Lower (IQR)</th>
+                    <th>Upper (IQR)</th>
+                    <th>Status</th>
+                </tr></thead>
+                <tbody>`;
+
+        IND_DEFS.forEach(({k,l}) => {
+            const val = r[k];
+            const b   = r.bounds[k]||{lb:null,ub:null};
+            let status='', rowCls='', pillCls='pill-ok', pillLbl='Normal';
+            if (b.ub!==null && val>b.ub)            { status='High'; rowCls='row-high'; pillCls='pill-high'; pillLbl='High'; }
+            else if (b.lb!==null && val>0 && val<b.lb){ status='Low';  rowCls='row-low';  pillCls='pill-low';  pillLbl='Low';  }
+            else if (b.ub===null)                    { pillCls='pill-na'; pillLbl='No bounds'; }
+
+            if (val===0||val===null||val===undefined) {
+                html += `<tr><td>${l}</td><td class="val-col" style="color:#bbb;">NA</td><td class="lb-col" style="color:#bbb;">—</td><td class="ub-col" style="color:#bbb;">—</td><td><span class="pill pill-na">NA</span></td></tr>`;
+            } else {
+                html += `<tr class="${rowCls}">
+                    <td>${l}</td>
+                    <td class="val-col">${val.toLocaleString()}</td>
+                    <td class="lb-col">${b.lb!==null ? b.lb.toLocaleString() : '—'}</td>
+                    <td class="ub-col">${b.ub!==null ? b.ub.toLocaleString() : '—'}</td>
+                    <td><span class="pill ${pillCls}">${pillLbl}</span></td>
+                </tr>`;
+            }
+        });
+
+        html += `</tbody></table></div>`;
+    });
+    html += `</div>`; // month-cards-grid
+    html += `</div>`; // pane-monthly
+
+    // PANE: Coherency
+    html += `<div id="pane-coherency" class="hidden">`;
+    if (facCoh.length===0) {
+        html += `<div class="no-data">No coherency errors found for this facility.</div>`;
+    } else {
+        html += `<div class="tbl-wrap"><table class="dqa-table">
+            <thead><tr><th>Year</th><th>Month</th><th>Check</th><th>Variable 1</th><th>Value 1</th><th>Variable 2</th><th>Value 2</th><th>Severity</th></tr></thead>
+            <tbody>${facCoh.map(r=>`<tr>
+                <td>${r.year}</td><td>${r.month}</td><td><strong>${r.check}</strong></td>
+                <td>${r.v1}</td><td><strong style="color:#dc3545">${r.v1val.toLocaleString()}</strong></td>
+                <td>${r.v2}</td><td><strong style="color:#004080">${r.v2val.toLocaleString()}</strong></td>
+                <td><span class="pill pill-error">${r.sev}</span></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+    }
+    html += `</div>`;
+
+    // PANE: Wrong Reporting
+    html += `<div id="pane-wrongrep" class="hidden">`;
+    if (facWr.length===0) {
+        html += `<div class="no-data">No wrong reporting errors found for this facility.</div>`;
+    } else {
+        html += `<div class="tbl-wrap"><table class="dqa-table">
+            <thead><tr><th>Year</th><th>Month</th><th>Rule Violated</th><th>Details</th><th>Severity</th></tr></thead>
+            <tbody>${facWr.map(r=>`<tr>
+                <td>${r.year}</td><td>${r.month}</td>
+                <td><strong>${r.rule}</strong></td>
+                <td style="white-space:normal;max-width:340px;font-size:11px;">${r.detail}</td>
+                <td><span class="pill pill-error">${r.sev}</span></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+    }
+    html += `</div>`;
+
+    // PANE: IQR Outliers
+    html += `<div id="pane-outliers" class="hidden">`;
+    if (facOut.length===0) {
+        html += `<div class="no-data">No IQR outliers detected for this facility.</div>`;
+    } else {
+        html += `<div class="tbl-wrap"><table class="dqa-table">
+            <thead><tr><th>Year</th><th>Month</th><th>Variable</th><th>Value</th><th>Lower Bound (Q1−1.5×IQR)</th><th>Upper Bound (Q3+1.5×IQR)</th><th>Status</th></tr></thead>
+            <tbody>${facOut.map(r=>`<tr>
+                <td>${r.year}</td><td>${r.month}</td>
+                <td><strong>${r.variable}</strong></td>
+                <td><strong style="color:#004080">${r.value.toLocaleString()}</strong></td>
+                <td style="color:#0056b3">${r.lb!==null?r.lb.toLocaleString():'—'}</td>
+                <td style="color:#b8700a">${r.ub!==null?r.ub.toLocaleString():'—'}</td>
+                <td><span class="pill ${r.status==='High'?'pill-high':'pill-low'}">${r.status==='High'?'High':'Low'}</span></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+    }
+    html += `</div>`;
+
+    // PANE: Incomplete Reporting
+    html += `<div id="pane-incomplete" class="hidden">`;
+    if (facInc.length===0) {
+        html += `<div class="no-data">No incomplete reporting periods detected for this facility.</div>`;
+    } else {
+        const totalVars = facInc.length;
+        const periods   = [...new Set(facInc.map(r=>r.period))].length;
+        html += `<div style="font-size:11px;color:#b8700a;font-weight:700;margin-bottom:8px;">
+            ${totalVars} incomplete variable-period combinations across ${periods} reporting period(s). Each NA value for an eligible variable counts as one incomplete report.</div>`;
+        html += `<div class="tbl-wrap"><table class="dqa-table">
+            <thead><tr><th>Year</th><th>Month</th><th>Variable</th><th>Issue</th><th>Details</th><th>Severity</th></tr></thead>
+            <tbody>${facInc.map(r=>`<tr>
+                <td>${r.year}</td><td>${r.month}</td>
+                <td><strong style="color:#004080">${r.variable}</strong></td>
+                <td>${r.issue}</td>
+                <td style="font-size:11px;">${r.detail}</td>
+                <td><span class="pill pill-low">${r.sev}</span></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+    }
+    html += `</div>`;
+
+    html += `</div>`; // dqa-panes
+    container.innerHTML = html;
+}
+
+function dqaTab(name, fac, btn) {
+    document.querySelectorAll('#dqa-panes > div').forEach(p=>p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('pane-'+name).classList.remove('hidden');
+    btn.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════
+   DOWNLOADS VIEW
+═══════════════════════════════════════════════ */
+function switchView(v) {
+    if (v==='downloads') {
+        prevView = 'facilities';
+        hideAllViews();
+        document.getElementById('v-downloads').classList.remove('hidden');
+        document.getElementById('breadcrumb').innerHTML='';
+    }
+}
+function backFromDownloads() {
+    document.getElementById('v-downloads').classList.add('hidden');
+    if (curFacility)      showDashboard(curFacility);
+    else if (curChiefdom) showFacilities(curChiefdom);
+    else if (curDistrict) showChiefdoms(curDistrict);
+    else if (curProvince) showDistricts(curProvince);
+    else                  showProvinces();
+}
+
+function renderDownloads() {
+    const items = [
+        { label:'coherency_issues.xlsx',
+          desc:`${cohIssues.length.toLocaleString()} coherency check errors`,
+          fn:()=>dlXL(cohIssues.map(r=>({Province:r.province,District:r.district,Chiefdom:r.chiefdom,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Check:r.check,Variable1:r.v1,Value1:r.v1val,Variable2:r.v2,Value2:r.v2val,Severity:r.sev})),'coherency_issues') },
+        { label:'wrong_reporting.xlsx',
+          desc:`${wrIssues.length.toLocaleString()} wrong reporting errors`,
+          fn:()=>dlXL(wrIssues.map(r=>({Province:r.province,District:r.district,Chiefdom:r.chiefdom,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Rule:r.rule,Detail:r.detail,Severity:r.sev})),'wrong_reporting') },
+        { label:'iqr_outliers.xlsx',
+          desc:`${outIssues.length.toLocaleString()} IQR outlier values`,
+          fn:()=>dlXL(outIssues.map(r=>({Province:r.province,District:r.district,Chiefdom:r.chiefdom,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Variable:r.variable,Value:r.value,LowerBound:r.lb,UpperBound:r.ub,Status:r.status})),'iqr_outliers') },
+        { label:'incomplete_reports.xlsx',
+          desc:`${incIssues.length.toLocaleString()} incomplete reporting periods`,
+          fn:()=>dlXL(incIssues.map(r=>({Province:r.province,District:r.district,Chiefdom:r.chiefdom,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Variable:r.variable,Issue:r.issue,Detail:r.detail,Severity:r.sev})),'incomplete_reports') },
+        { label:'all_issues_combined.xlsx',
+          desc:`All ${(cohIssues.length+wrIssues.length+outIssues.length).toLocaleString()} issues in one file`,
+          fn:()=>dlXL([
+              ...incIssues.map(r=>({Category:'Incomplete Report',Province:r.province,District:r.district,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Variable:r.variable,Issue:r.issue,Severity:r.sev,Detail:r.detail})),
+              ...cohIssues.map(r=>({Category:'Coherency',Province:r.province,District:r.district,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Issue:r.check,Severity:r.sev,Detail:`${r.v1}=${r.v1val} vs ${r.v2}=${r.v2val}`})),
+              ...wrIssues.map(r=>({Category:'Wrong Reporting',Province:r.province,District:r.district,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Issue:r.rule,Severity:r.sev,Detail:r.detail})),
+              ...outIssues.map(r=>({Category:'P5/P95 Outlier',Province:r.province,District:r.district,Facility:r.facility,Type:r.type,Year:r.year,Month:r.month,Issue:r.variable,Severity:r.status,Detail:`Value=${r.value} LB_P5=${r.lb} UB_P95=${r.ub}`}))
+          ],'all_issues_combined') },
+        { label:'processed_data_with_bounds.xlsx',
+          desc:`${processedRows.length.toLocaleString()} aggregated HF x Period rows with IQR bounds`,
+          fn:()=>dlXL(processedRows.map(r=>({
+              Province:r.province,District:r.district,Chiefdom:r.chiefdom,Facility:r.facility,Type:r.type,
+              Year:r.year,Month:r.month,
+              OPD:r.opd,Suspected:r.susp,Microscopy:r.micro,TotalTested:r.tested,Confirmed:r.conf,Treated:r.treated,MalariaAdmissions:r.admission,
+              OPD_LB:r.bounds.opd?.lb,OPD_UB:r.bounds.opd?.ub,
+              Susp_LB:r.bounds.susp?.lb,Susp_UB:r.bounds.susp?.ub,
+              Micro_LB:r.bounds.micro?.lb,Micro_UB:r.bounds.micro?.ub,
+              Conf_LB:r.bounds.conf?.lb,Conf_UB:r.bounds.conf?.ub,
+              Treat_LB:r.bounds.treated?.lb,Treat_UB:r.bounds.treated?.ub
+          })),'processed_data_with_bounds') }
+    ];
+    window._dlFns = items.map(it=>it.fn);
+    document.getElementById('dlGrid').innerHTML = items.map((it,i)=>`
+        <div class="dl-card">
+            <strong>${it.label}</strong>
+            <span>${it.desc}</span>
+            <button class="btn btn-success btn-sm" onclick="_dlFns[${i}]()">Download Excel</button>
+        </div>`).join('');
+}
+
+function dlXL(data, name) {
+    if (!data||!data.length) { showAlert('No data to download.','error'); return; }
+    const ws=XLSX.utils.json_to_sheet(data);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Data');
+    XLSX.writeFile(wb,name+'.xlsx');
+    showAlert('Downloaded: '+name+'.xlsx','success');
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+
+function resetApp() {
+    processedRows=[]; cohIssues=[]; wrIssues=[]; outIssues=[]; incIssues=[];
+    allPeriods=[]; allDistricts=[]; hierarchy={}; facMeta={};
+    _rawRows=[]; _fileName=''; MAP={};
+    curProvince=null; curDistrict=null; curChiefdom=null; curFacility=null;
+    document.getElementById('fileInput').value='';
+    document.getElementById('mappingSection').classList.add('hidden');
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('uploadSection').classList.remove('hidden');
+    document.getElementById('alertBox').innerHTML='';
+}
+
+function showLoading(msg) {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    document.getElementById('loadingMsg').textContent = msg||'Processing...';
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+
+function showAlert(msg, type='info') {
+    const cls = {info:'alert-info',success:'alert-success',error:'alert-error'}[type]||'alert-info';
+    document.getElementById('alertBox').innerHTML = `<div class="alert ${cls}">${msg}</div>`;
+    if (type!=='error') setTimeout(()=>{ document.getElementById('alertBox').innerHTML=''; }, 5000);
+}
+</script>
+</body>
+</html>
